@@ -28,7 +28,7 @@ export const getSubscriptionDetails = async () => {
     throw new Error("Failed to fetch subscription details");
   }
 };
-import axios from 'axios';
+
 
 const api = axios.create({
   baseURL: 'http://localhost:5000', // Adjust this to match your backend URL

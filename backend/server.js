@@ -26,7 +26,7 @@ app.use(express.json());
 app.use(bodyParser.json());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB Atlas'))
   .catch(err => console.log('MongoDB connection error:', err));
 
@@ -40,8 +40,11 @@ app.use('/api/users',userRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/managetrainers', trainerManageRoutes);
 app.use('/api/Plan', SubscriptionRoutes);
-
 app.use('/api/manageusers', userManageRoutes);
+
+// Notification routes
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

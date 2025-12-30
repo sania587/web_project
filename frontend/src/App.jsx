@@ -19,6 +19,7 @@ import PaymentPage from './pages/Admin/PaymentPage';
 import ReportPage from './pages/Admin/reportPage';
 import FeedbackComponent from './components/Admin/FeedbackComponent';
 import SubscriptionComponent from "./components/Admin/SubscriptionComponent";
+import NotificationsComponent from "./components/Admin/NotificationsComponent";
 
 // Customer Pages
 import CustomerSignupPage from "./pages/Customer/CustomerSignupPage";
@@ -82,6 +83,7 @@ const App = () => {
           <Route path="/payment" element={<PaymentPage />} />
           <Route path="/manage-subscriptions" element={<SubscriptionComponent />} />
           <Route path="/feedback" element={<FeedbackComponent />} />
+          <Route path="/admin/notifications" element={<NotificationsComponent />} />
 
           {/* Customer Routes */}
           <Route path="/dashboard" element={<CustomerDashboard />} />
