@@ -28,6 +28,8 @@ import CustomerDashboard from "./pages/Customer/dashboardPage";
 import TrainerSignup from "./pages/Trainer/TrainerSignup";
 import TrainerDashboard from "./pages/Trainer/TrainerDashboard";
 import TrainerWorkouts from "./pages/Trainer/TrainerWorkouts";
+import ExerciseBrowser from "./pages/Trainer/ExerciseBrowser";
+import ExerciseDetailPage from "./pages/Trainer/ExerciseDetailPage";
 import { WorkoutsContextProvider } from "./components/Trainer/Workouts/WorkoutsContext";
 
 const App = () => {
@@ -87,6 +89,8 @@ const App = () => {
           {/* Trainer Routes */}
           <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
           <Route path="/trainer/workouts" element={<TrainerWorkouts />} />
+          <Route path="/trainer/exercises" element={<ExerciseBrowser />} />
+          <Route path="/exercise/:id" element={<ExerciseDetailPage />} />
         </Routes>
       </WorkoutsContextProvider>
     </Router>
