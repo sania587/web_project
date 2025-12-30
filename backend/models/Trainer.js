@@ -1,19 +1,25 @@
 const mongoose = require('mongoose');
 
-// Define the User Schema
-const TainerSchema = new mongoose.Schema({
+// Define the Trainer Schema - Combined from both branches
+const TrainerSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: [ 'trainer'], required: true },
+  role: { type: String, enum: ['trainer'], required: true },
+  
+  // Profile details for trainers
   profileDetails: {
     age: Number,
     gender: String,
-   
-    specializations: [String], // For trainers
-    certifications: [String] // For trainers
+    specializations: [String], // Trainer expertise areas
+    certifications: [String], // Trainer certifications
   },
-  notifications: [{ type: String }], // Notifications
+  
+  // Specialization and availability from trainer branch
+  specialization: { type: String },
+  availability: { type: [String] }, // Time slots
+  
+  notifications: [{ type: String }],
   feedback: [
     { 
       from: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -22,7 +28,7 @@ const TainerSchema = new mongoose.Schema({
     }
   ],
   
-  // Additional fields for password reset functionality
+  // Password reset functionality
   resetToken: { 
     type: String, 
     default: null 
@@ -33,5 +39,4 @@ const TainerSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-// Create and export the User model
-module.exports = mongoose.model('Trainer', TainerSchema);
+module.exports = mongoose.model('Trainer', TrainerSchema);

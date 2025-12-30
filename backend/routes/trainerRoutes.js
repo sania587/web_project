@@ -1,10 +1,15 @@
+const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Trainer = require('../models/Trainer'); // Import the Trainer model
+const Trainer = require('../models/Trainer');
+const { getTrainerProfile, updateTrainerProfile, createWorkoutPlan } = require('../controllers/trainerController');
+const authMiddleware = require('../middleware/authMiddleware');
+
+const router = express.Router();
 
 // Signup endpoint for trainers
-app.post('/signup', async (req, res) => {
-  const { name, email, password, expertise, experience } = req.body;
+router.post('/signup', async (req, res) => {
+  const { name, email, password, expertise, experience, specializations, certifications } = req.body;
 
   try {
     // Check if the email already exists
@@ -21,11 +26,12 @@ app.post('/signup', async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: 'trainer', // Ensure the role is set to 'trainer'
+      role: 'trainer',
       profileDetails: {
-        expertise,  // Store expertise (e.g., Weightlifting, Cardio, Yoga)
-        experience, // Store years of experience
-      }
+        specializations: specializations || [],
+        certifications: certifications || [],
+      },
+      specialization: expertise,
     });
 
     // Save the trainer to the database
@@ -33,9 +39,9 @@ app.post('/signup', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: newTrainer._id, email: newTrainer.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { userId: newTrainer._id, email: newTrainer.email, role: 'trainer' },
+      process.env.JWT_SECRET || 'your_jwt_secret',
+      { expiresIn: '1d' }
     );
 
     // Send response
@@ -49,3 +55,10 @@ app.post('/signup', async (req, res) => {
     res.status(500).json({ message: 'Something went wrong. Please try again later.' });
   }
 });
+
+// Protected Trainer Routes
+router.get('/profile', authMiddleware, getTrainerProfile);
+router.put('/profile', authMiddleware, updateTrainerProfile);
+router.post('/plans', authMiddleware, createWorkoutPlan);
+
+module.exports = router;
