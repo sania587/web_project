@@ -4,6 +4,7 @@ const {
   getUserCount,
   getTrainerCount,
   getFeedbackCount,
+  getAllStats,
 } = require("../controllers/adminDashboardController");
 const router = express.Router();
 
@@ -11,5 +12,6 @@ const router = express.Router();
 router.get("/user-count", getUserCount);
 router.get("/trainer-count", getTrainerCount);
 router.get("/feedback-count", getFeedbackCount);
+router.get("/stats", getAllStats);
 
 module.exports = router;

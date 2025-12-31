@@ -1,8 +1,11 @@
 // userRoutes.js
 const express = require('express');
-const { signup, login } = require('../controllers/userController');  // Correct import for controller functions
+const { signup, login, updateProfile, uploadProfilePicture } = require('../controllers/userController');
 const { protect } = require("../middleware/authMiddleware");
+const upload = require('../middleware/uploadMiddleware');
 const User = require("../models/User");
+const Admin = require("../models/Admin");
+const Trainer = require("../models/Trainer");
 const router = express.Router();
 
 // Define login route
@@ -13,21 +16,34 @@ router.post('/signup', signup);
 
 router.get("/profile", protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password"); // Use `req.user.id` to get the authenticated user's ID
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    let Model;
+    if (userRole === 'admin') {
+      Model = Admin;
+    } else if (userRole === 'trainer') {
+      Model = Trainer;
+    } else {
+      Model = User;
+    }
+    
+    const user = await Model.findById(userId).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
-    const profileDetails = {
-      age: user.profileDetails?.age,
-      gender: user.profileDetails?.gender,
-      healthGoals: user.profileDetails?.healthGoals,
-    };
-    res.status(200).json({ ...user.toObject(), profileDetails });
+    res.status(200).json(user);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error." });
   }
 });
+
+// Update Profile (all roles)
+router.put("/profile", protect, updateProfile);
+
+// Upload Profile Picture (all roles)
+router.post("/profile/picture", protect, upload.single('profilePicture'), uploadProfilePicture);
 
 // Fetch Profile
 router.get("/:id/profile", protect, async (req, res) => {

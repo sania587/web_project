@@ -26,17 +26,24 @@ exports.deleteTrainer = async (req, res) => {
   }
 };
 
-// Block a trainer (removing them from the database)
-exports.blockTrainer = async (req, res) => {
+// Toggle block/unblock a trainer
+exports.toggleBlockTrainer = async (req, res) => {
   try {
     const trainerId = req.params.id;
-    const trainer = await Trainer.findByIdAndDelete(trainerId);
+    const trainer = await Trainer.findById(trainerId);
 
     if (!trainer) {
       return res.status(404).json({ message: 'Trainer not found' });
     }
 
-    res.json({ message: 'Trainer blocked and removed successfully' });
+    // Toggle the blocked status
+    trainer.blocked = !trainer.blocked;
+    await trainer.save();
+
+    res.json({ 
+      message: trainer.blocked ? 'Trainer blocked successfully' : 'Trainer unblocked successfully',
+      blocked: trainer.blocked
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server Error' });
   }

@@ -34,16 +34,28 @@ const searchFeedback = async (req, res) => {
     let feedbackQuery = Feedback.find();
 
     if (searchType === 'trainer' && trainerUsername) {
-      const trainer = await User.findOne({ name: trainerUsername, role: 'trainer' });
+      // Use regex for partial case-insensitive match on name
+      const trainer = await User.findOne({ 
+        name: { $regex: trainerUsername, $options: 'i' }, 
+        role: 'trainer' 
+      });
       if (trainer) {
         feedbackQuery = feedbackQuery.where('trainerId').equals(trainer._id);
+      } else {
+        return res.json([]); // Trainer not found, return empty
       }
     }
 
     if (searchType === 'customer' && customerUsername) {
-      const customer = await User.findOne({ name: customerUsername, role: 'customer' });
+      // Use regex for partial case-insensitive match on name
+      const customer = await User.findOne({ 
+        name: { $regex: customerUsername, $options: 'i' }, 
+        role: 'customer' 
+      });
       if (customer) {
         feedbackQuery = feedbackQuery.where('customerId').equals(customer._id);
+      } else {
+        return res.json([]); // Customer not found, return empty
       }
     }
 

@@ -1,5 +1,5 @@
-import { WorkoutsContext } from './WorkoutsContext'
 import { useContext } from 'react'
+import { WorkoutsContext } from './WorkoutsContext'
 
 export const useWorkoutsContext = () => {
   const context = useContext(WorkoutsContext)

@@ -14,13 +14,19 @@ const Exercises = ({ exercises, setExercises, bodyPart }) => {
     const fetchExercisesData = async () => {
       let exercisesData = [];
 
-      if (bodyPart === 'all') {
-        exercisesData = await fetchData('https://exercisedb.p.rapidapi.com/exercises', exerciseOptions);
-      } else {
-        exercisesData = await fetchData(`https://exercisedb.p.rapidapi.com/exercises/bodyPart/${bodyPart}`, exerciseOptions);
-      }
+      try {
+        if (bodyPart === 'all') {
+          // Use local backend API which handles caching
+          exercisesData = await fetchData('http://localhost:5000/api/exercises', {});
+        } else {
+          exercisesData = await fetchData(`http://localhost:5000/api/exercises?bodyPart=${bodyPart}`, {});
+        }
 
-      setExercises(exercisesData);
+        // The new API returns data in a different structure
+        setExercises(exercisesData.data || exercisesData || []);
+      } catch (error) {
+        console.error("Failed to fetch exercises:", error);
+      }
     };
 
     fetchExercisesData();

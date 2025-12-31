@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import AdminNav from "./AdminNav";
+
+import { useTheme } from "../../context/ThemeContext";
 import { 
   FaUsers, 
   FaUserTie, 
@@ -11,8 +12,36 @@ import {
   FaArrowDown,
   FaChartLine
 } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  Filler
+} from 'chart.js';
+import { Line, Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  Filler
+);
 
 const AdminDashboardComponent = () => {
+  const { theme, isDark } = useTheme();
+  
   const [stats, setStats] = useState({
     userCount: 0,
     trainerCount: 0,
@@ -22,53 +51,34 @@ const AdminDashboardComponent = () => {
     totalRevenue: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
+  const [showAllActivities, setShowAllActivities] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchAllStats = async () => {
     try {
       setLoading(true);
       
-      // Fetch all counts in parallel
-      const [userRes, trainerRes, feedbackRes, paymentRes, subscriptionRes] = await Promise.all([
-        fetch("http://localhost:5000/api/counts/user-count"),
-        fetch("http://localhost:5000/api/counts/trainer-count"),
-        fetch("http://localhost:5000/api/counts/feedback-count"),
-        fetch("http://localhost:5000/api/payment"),
-        fetch("http://localhost:5000/api/Plan/subscriptions")
-      ]);
-
-      const userData = await userRes.json();
-      const trainerData = await trainerRes.json();
-      const feedbackData = await feedbackRes.json();
-      const paymentData = await paymentRes.json();
-      const subscriptionData = await subscriptionRes.json();
-
-      // Calculate total revenue from payments
-      const totalRevenue = Array.isArray(paymentData) 
-        ? paymentData.reduce((sum, p) => sum + (p.amount || 0), 0)
-        : 0;
+      const response = await fetch("http://localhost:5000/api/counts/stats");
+      const data = await response.json();
 
       setStats({
-        userCount: userData.userCount || 0,
-        trainerCount: trainerData.trainerCount || 0,
-        feedbackCount: feedbackData.feedbackCount || 0,
-        paymentCount: Array.isArray(paymentData) ? paymentData.length : 0,
-        subscriptionCount: Array.isArray(subscriptionData) ? subscriptionData.length : 0,
-        totalRevenue
+        userCount: data.activeUsers || 0,
+        trainerCount: data.activeTrainers || 0,
+        feedbackCount: data.feedbackCount || 0,
+        paymentCount: data.paymentCount || 0,
+        subscriptionCount: data.subscriptionCount || 0,
+        totalRevenue: data.revenue || 0
       });
 
-      // Create recent activity from latest data
-      const activities = [];
-      if (Array.isArray(paymentData) && paymentData.length > 0) {
-        paymentData.slice(0, 3).forEach(p => {
-          activities.push({
-            type: 'payment',
-            message: `Payment of $${p.amount} received`,
-            time: new Date(p.createdAt).toLocaleDateString()
-          });
-        });
+      // Format recent activity
+      if (Array.isArray(data.recentActivity)) {
+        const formattedActivity = data.recentActivity.map(activity => ({
+          type: activity.type,
+          message: activity.message,
+          time: new Date(activity.time).toLocaleDateString()
+        }));
+        setRecentActivity(formattedActivity);
       }
-      setRecentActivity(activities);
 
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -133,41 +143,68 @@ const AdminDashboardComponent = () => {
   ];
 
   const quickActions = [
-    { label: "Add Trainer", path: "/signup/trainer", color: "bg-purple-600 hover:bg-purple-700" },
-    { label: "View Reports", path: "/reports", color: "bg-indigo-600 hover:bg-indigo-700" },
-    { label: "Manage Plans", path: "/manage-subscriptions", color: "bg-amber-600 hover:bg-amber-700" },
-    { label: "Send Notification", path: "/admin/notifications", color: "bg-green-600 hover:bg-green-700" }
+    { label: "Add Trainer", path: "/signup/trainer", bg: theme.colors.primary },
+    { label: "View Reports", path: "/reports", bg: theme.colors.secondary },
+    { label: "Manage Plans", path: "/manage-subscriptions", bg: theme.colors.accent },
+    { label: "Notifications", path: "/admin/notifications", bg: theme.colors.success }
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AdminNav />
+    <div 
+      className="min-h-screen transition-colors duration-300"
+      style={{ backgroundColor: theme.colors.background }}
+    >
 
-      <main className="p-6 lg:p-8">
+
+      <main className="p-6 lg:p-8 space-y-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-slate-800">Welcome back, Admin!</h2>
-          <p className="text-slate-500 mt-1">Here's what's happening with your fitness center today.</p>
+        <div>
+          <h2 
+            className="text-3xl font-bold mb-2 transition-colors duration-300"
+            style={{ color: theme.colors.text }}
+          >
+            Welcome back, Admin!
+          </h2>
+          <p 
+            className="transition-colors duration-300"
+            style={{ color: theme.colors.textSecondary }}
+          >
+            Here's what's happening with your fitness center today.
+          </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
           {statCards.map((card, index) => {
             const Icon = card.icon;
             return (
               <div
                 key={index}
-                className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 border border-slate-100"
+                className="rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 border backdrop-blur-sm"
+                style={{ 
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border
+                }}
               >
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-4`}>
+                <div 
+                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-4`}
+                >
                   <Icon className="text-white text-xl" />
                 </div>
-                <p className="text-slate-500 text-sm font-medium">{card.title}</p>
-                <div className="flex items-end justify-between mt-1">
-                  <h3 className="text-2xl font-bold text-slate-800">
+                <p 
+                  className="text-sm font-medium mb-1 min-h-[40px] flex items-center"
+                  style={{ color: theme.colors.textSecondary }}
+                >
+                  {card.title}
+                </p>
+                <div className="flex items-end justify-between mt-auto">
+                  <h3 
+                    className="text-2xl font-bold"
+                    style={{ color: theme.colors.text }}
+                  >
                     {loading ? "..." : card.value}
                   </h3>
-                  <span className={`flex items-center text-xs font-medium ${card.positive ? 'text-green-600' : 'text-red-500'}`}>
+                  <span className={`flex items-center text-xs font-medium ${card.positive ? 'text-green-500' : 'text-red-500'}`}>
                     {card.positive ? <FaArrowUp className="mr-1" /> : <FaArrowDown className="mr-1" />}
                     {card.change}
                   </span>
@@ -180,45 +217,100 @@ const AdminDashboardComponent = () => {
         {/* Quick Actions & Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Quick Actions */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <FaChartLine className="text-indigo-600" />
+          <div 
+            className="rounded-2xl p-6 shadow-sm border h-full flex flex-col"
+            style={{ 
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border
+            }}
+          >
+            <h3 
+              className="text-lg font-bold mb-4 flex items-center gap-2"
+              style={{ color: theme.colors.text }}
+            >
+              <FaChartLine style={{ color: theme.colors.primary }} />
               Quick Actions
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 flex-1">
               {quickActions.map((action, index) => (
-                <a
+                <Link
                   key={index}
-                  href={action.path}
-                  className={`${action.color} text-white text-sm font-medium py-3 px-4 rounded-xl text-center transition-all duration-200 hover:scale-105`}
+                  to={action.path}
+                  className="text-white text-sm font-medium py-4 px-4 rounded-xl text-center transition-all duration-200 hover:scale-105 hover:shadow-md flex items-center justify-center w-full min-h-[80px]"
+                  style={{ backgroundColor: action.bg }}
                 >
                   {action.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
 
           {/* Recent Activity */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Recent Activity</h3>
+          <div 
+            className="lg:col-span-2 rounded-2xl p-6 shadow-sm border"
+            style={{ 
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border
+            }}
+          >
+            <h3 
+              className="text-lg font-bold mb-4"
+              style={{ color: theme.colors.text }}
+            >
+              Recent Activity
+            </h3>
             {recentActivity.length > 0 ? (
+              <>
               <div className="space-y-3">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      activity.type === 'payment' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
-                    }`}>
+                {recentActivity.slice(0, showAllActivities ? recentActivity.length : 3).map((activity, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center gap-4 p-3 rounded-xl transition-colors"
+                    style={{ backgroundColor: isDark ? theme.colors.surfaceHover : theme.colors.background }}
+                  >
+                    <div 
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white"
+                      style={{ 
+                        backgroundColor: activity.type === 'payment' ? theme.colors.success : theme.colors.primary 
+                      }}
+                    >
                       {activity.type === 'payment' ? <FaDollarSign /> : <FaUsers />}
                     </div>
                     <div className="flex-1">
-                      <p className="text-slate-700 font-medium">{activity.message}</p>
-                      <p className="text-slate-400 text-sm">{activity.time}</p>
+                      <p 
+                        className="font-medium"
+                        style={{ color: theme.colors.text }}
+                      >
+                        {activity.message}
+                      </p>
+                      <p 
+                        className="text-sm"
+                        style={{ color: theme.colors.textSecondary }}
+                      >
+                        {activity.time}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
+              {recentActivity.length > 2 && (
+                <button
+                  onClick={() => setShowAllActivities(!showAllActivities)}
+                  className="mt-4 w-full py-2 text-sm font-medium text-center rounded-lg transition-colors hover:bg-opacity-10"
+                  style={{ 
+                    color: theme.colors.primary, 
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                  }}
+                >
+                  {showAllActivities ? 'View Less' : 'View All Recent Activity'}
+                </button>
+              )}
+              </>
             ) : (
-              <div className="text-center py-8 text-slate-400">
+              <div 
+                className="text-center py-8"
+                style={{ color: theme.colors.textMuted }}
+              >
                 <FaChartLine className="mx-auto text-4xl mb-2 opacity-50" />
                 <p>No recent activity to display</p>
               </div>
@@ -226,25 +318,113 @@ const AdminDashboardComponent = () => {
           </div>
         </div>
 
-        {/* Performance Overview */}
-        <div className="mt-8 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-8 text-white">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold mb-2">Fitness Center Performance</h3>
-              <p className="text-indigo-200">Your gym is growing! Keep up the great work.</p>
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
+          {/* Revenue Chart */}
+          <div 
+            className="rounded-2xl p-6 shadow-sm border"
+            style={{ 
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border
+            }}
+          >
+            <h3 
+              className="text-lg font-bold mb-4"
+              style={{ color: theme.colors.text }}
+            >
+              Revenue Analytics
+            </h3>
+            <div className="h-64">
+              <Line 
+                data={{
+                  labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                  datasets: [
+                    {
+                      label: 'Revenue',
+                      data: [65, 59, 80, 81, 56, stats.totalRevenue || 0],
+                      fill: true,
+                      backgroundColor: isDark ? 'rgba(147, 51, 234, 0.2)' : 'rgba(147, 51, 234, 0.1)',
+                      borderColor: theme.colors.primary,
+                      tension: 0.4
+                    }
+                  ]
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      grid: {
+                        color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                      },
+                      ticks: {
+                        color: theme.colors.textSecondary
+                      }
+                    },
+                    x: {
+                      grid: {
+                        display: false
+                      },
+                      ticks: {
+                        color: theme.colors.textSecondary
+                      }
+                    }
+                  }
+                }}
+              />
             </div>
-            <div className="mt-4 md:mt-0 flex gap-8">
-              <div className="text-center">
-                <p className="text-4xl font-bold">{stats.userCount + stats.trainerCount}</p>
-                <p className="text-indigo-200 text-sm">Total Members</p>
-              </div>
-              <div className="text-center">
-                <p className="text-4xl font-bold">95%</p>
-                <p className="text-indigo-200 text-sm">Satisfaction</p>
-              </div>
-              <div className="text-center">
-                <p className="text-4xl font-bold">${stats.totalRevenue}</p>
-                <p className="text-indigo-200 text-sm">This Month</p>
+          </div>
+
+          {/* Member Distribution Chart */}
+          <div 
+            className="rounded-2xl p-6 shadow-sm border"
+            style={{ 
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border
+            }}
+          >
+            <h3 
+              className="text-lg font-bold mb-4"
+              style={{ color: theme.colors.text }}
+            >
+              Member Distribution
+            </h3>
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-64">
+                <Doughnut 
+                  data={{
+                    labels: ['Customers', 'Trainers'],
+                    datasets: [
+                      {
+                        data: [stats.userCount, stats.trainerCount],
+                        backgroundColor: [
+                          theme.colors.primary,
+                          theme.colors.secondary
+                        ],
+                        borderColor: theme.colors.surface,
+                        borderWidth: 2
+                      }
+                    ]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                        labels: {
+                          color: theme.colors.text
+                        }
+                      }
+                    }
+                  }}
+                />
               </div>
             </div>
           </div>

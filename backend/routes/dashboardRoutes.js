@@ -1,39 +1,79 @@
-// server.js
-
-// Import required modules
 const express = require('express');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const cors = require('cors');
+const router = express.Router();
+const WorkoutPlan = require('../models/WorkoutPlan');
+const DietPlan = require('../models/DietPlan');
+const Progress = require('../models/Progress');
+const Trainer = require('../models/Trainer');
+const { protect } = require('../middleware/authMiddleware'); // Assuming you want protection
 
-// Initialize Express app
-const app = express();
+// GET /api/dashboard/plans
+// Fetch assigned workout and diet plans for the logged-in user
+router.get('/plans', protect, async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-// Load environment variables from .env file
-dotenv.config();
+    // Find plans where 'assignedTo' array contains the user's ID
+    const workoutPlan = await WorkoutPlan.findOne({ assignedTo: userId });
+    const dietPlan = await DietPlan.findOne({ assignedTo: userId });
 
-// Middleware
-app.use(cors());  // Enable Cross-Origin Resource Sharing (CORS) if needed
-app.use(express.json());  // Parse incoming JSON requests
-
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('Connected to MongoDB Atlas'))
-  .catch(err => console.log('MongoDB connection error:', err));
-
-// Example route
-app.get('/', (req, res) => {
-  res.send('Welcome to the Fitness Website API!');
+    res.json({
+      workoutPlan: workoutPlan ? workoutPlan.name : null,
+      dietPlan: dietPlan ? dietPlan.name : null,
+      // You can return full objects if the frontend needs more details later
+    });
+  } catch (error) {
+    console.error('Error fetching plans:', error);
+    res.status(500).json({ message: 'Server error fetching plans' });
+  }
 });
 
-// Routes
-app.use('/api/users', require('./routes/userRoutes'));  // User routes
-app.use('/api/sessions', require('./routes/sessionRoutes'));  // Session routes
-app.use('/api/notifications', require('./routes/notificationRoutes'));  // Notification routes
-app.use('/api/dashboard', require('./routes/dashboardRoutes'));  // Dashboard routes
-
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// GET /api/dashboard/progress
+// Fetch progress reports for the logged-in user
+router.get('/progress', protect, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const reports = await Progress.find({ user: userId }).sort({ date: -1 }); // Sort by newest first
+    res.json(reports);
+  } catch (error) {
+    console.error('Error fetching progress:', error);
+    res.status(500).json({ message: 'Server error fetching progress' });
+  }
 });
+
+// GET /api/dashboard/trainers
+// Fetch all trainers
+router.get('/trainers', protect, async (req, res) => {
+  try {
+    const trainers = await Trainer.find({}).lean();
+
+    const formattedTrainers = trainers.map(trainer => {
+      // Calculate average rating
+      let avgRating = 0;
+      if (trainer.feedback && trainer.feedback.length > 0) {
+        const sum = trainer.feedback.reduce((acc, curr) => acc + curr.rating, 0);
+        avgRating = (sum / trainer.feedback.length).toFixed(1);
+      }
+
+      // Handle dual schema possibilities for specializations
+      const specializations = trainer.profileDetails?.specializations || 
+                              (trainer.specialization ? [trainer.specialization] : []) || 
+                              [];
+
+      return {
+        id: trainer._id,
+        name: trainer.name,
+        email: trainer.email,
+        specializations: specializations,
+        availability: trainer.availability || [],
+        rating: avgRating
+      };
+    });
+
+    res.json(formattedTrainers);
+  } catch (error) {
+    console.error('Error fetching trainers:', error);
+    res.status(500).json({ message: 'Server error fetching trainers' });
+  }
+});
+
+module.exports = router;

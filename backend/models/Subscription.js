@@ -5,6 +5,8 @@ const SubscriptionSchema = new mongoose.Schema({
   duration: { type: String, enum: ['monthly', 'quarterly', 'yearly'], required: true },
   price: { type: Number, required: true },
   discount: { type: Number, default: 0 },
+  features: [{ type: String }], // List of features included in this plan
+  description: { type: String }, // Optional description of the plan
 }, { timestamps: true });
 
 module.exports = mongoose.model('Subscription', SubscriptionSchema);

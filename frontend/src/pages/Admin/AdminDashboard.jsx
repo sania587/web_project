@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import AdminLayout from '../../components/Admin/AdminLayout';
 import AdminDashboardComponent from '../../components/Admin/AdminDashboardComponent';
+
 function Dashboard() {
- 
   return (
-    <div>
-      
-      
+    <AdminLayout>
       <AdminDashboardComponent />
-    </div>
+    </AdminLayout>
   );
 }
 

@@ -36,4 +36,25 @@ const searchUserByName = async (req, res) => {
   }
 };
 
-module.exports = { getAllUsers, deleteUser, searchUserByName };
+// Controller to toggle block/unblock a user by ID
+const toggleBlockUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Toggle the blocked status
+    user.blocked = !user.blocked;
+    await user.save();
+    
+    res.status(200).json({ 
+      message: user.blocked ? 'User blocked successfully' : 'User unblocked successfully',
+      blocked: user.blocked
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getAllUsers, deleteUser, searchUserByName, toggleBlockUser };

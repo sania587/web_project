@@ -168,10 +168,29 @@ export const login = createAsyncThunk('auth/login', async (userData, thunkAPI) =
   }
 });
 
+// Load user from localStorage
+const loadUserFromStorage = () => {
+  try {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      return {
+        user: parsed.user || null,
+        token: parsed.token || null,
+        isAuthenticated: !!parsed.user,
+        loading: false,
+        error: null
+      };
+    }
+  } catch (error) {
+    console.error('Error loading user from localStorage:', error);
+  }
+  return { user: null, token: null, loading: false, error: null, isAuthenticated: false };
+};
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState: { user: null, token: null, loading: false, error: null, isAuthenticated: false },
+  initialState: loadUserFromStorage(),
   reducers: {
     logout: (state) => {
       state.user = null;

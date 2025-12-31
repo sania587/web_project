@@ -36,9 +36,12 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    // Check if the email is already registered
+    // Check if the email is already registered in any collection
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    const existingAdmin = await Admin.findOne({ email });
+    const existingTrainer = await Trainer.findOne({ email });
+
+    if (existingUser || existingAdmin || existingTrainer) {
       return res.status(400).json({ message: 'Email is already in use.' });
     }
 
@@ -126,7 +129,8 @@ exports.login = async (req, res) => {
       user = await Trainer.findOne({ email });
       if (!user) {
         // If not found in Trainer, check in User model (Customer)
-        user = await User.findOne({ email });
+        // Populate subscription.plan to get features
+        user = await User.findOne({ email }).populate('subscription.plan');
         if (!user) {
           return res.status(404).json({ message: 'Invalid email or password.' });
         }
@@ -137,6 +141,11 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    // Check if the user is blocked
+    if (user.blocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact support for assistance.' });
     }
 
     // Generate a token
@@ -152,6 +161,25 @@ exports.login = async (req, res) => {
       dashboardUrl = '/dashboard';  // Redirect to Customer Dashboard
     }
 
+    // Build subscription info for customers
+    let subscriptionInfo = null;
+    if (user.role === 'customer' && user.subscription) {
+      const isActive = user.subscription.status === 'active' && 
+                       user.subscription.endDate && 
+                       new Date(user.subscription.endDate) > new Date();
+      
+      subscriptionInfo = {
+        status: isActive ? 'active' : (user.subscription.status || 'none'),
+        plan: user.subscription.plan ? {
+          id: user.subscription.plan._id,
+          name: user.subscription.plan.name,
+          features: user.subscription.plan.features || []
+        } : null,
+        startDate: user.subscription.startDate,
+        endDate: user.subscription.endDate
+      };
+    }
+
     res.status(200).json({
       message: 'Login successful.',
       user: {
@@ -159,10 +187,11 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        profileDetails: user.profileDetails,  // Return profile details
+        profileDetails: user.profileDetails,
+        subscription: subscriptionInfo
       },
       token,
-      redirectUrl: dashboardUrl,  // Add the redirect URL based on the role
+      redirectUrl: dashboardUrl,
     });
   } catch (error) {
     console.error('Error during login:', error);
@@ -235,6 +264,111 @@ exports.getSubscriptionDetails = async (req, res) => {
       subscription: user.subscription,
     });
   } catch (error) {
+    res.status(500).json({ message: 'Server error.', error: error.message });
+  }
+};
+
+// @desc Update user profile
+// @route PUT /api/users/profile
+// @access Private
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { name, age, gender, healthGoals, specializations, certifications } = req.body;
+
+    let Model;
+    if (userRole === 'admin') {
+      Model = Admin;
+    } else if (userRole === 'trainer') {
+      Model = Trainer;
+    } else {
+      Model = User;
+    }
+
+    const user = await Model.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Update basic fields
+    if (name) user.name = name;
+
+    // Update profile details based on role
+    if (!user.profileDetails) {
+      user.profileDetails = {};
+    }
+    
+    if (age) user.profileDetails.age = age;
+    if (gender) user.profileDetails.gender = gender;
+    
+    // Customer-specific
+    if (userRole === 'customer' && healthGoals) {
+      user.profileDetails.healthGoals = healthGoals;
+    }
+    
+    // Trainer-specific
+    if (userRole === 'trainer') {
+      if (specializations) user.profileDetails.specializations = specializations;
+      if (certifications) user.profileDetails.certifications = certifications;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: 'Profile updated successfully.',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileDetails: user.profileDetails,
+        profilePicture: user.profilePicture
+      }
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ message: 'Server error.', error: error.message });
+  }
+};
+
+// @desc Upload profile picture
+// @route POST /api/users/profile/picture
+// @access Private
+exports.uploadProfilePicture = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded.' });
+    }
+
+    let Model;
+    if (userRole === 'admin') {
+      Model = Admin;
+    } else if (userRole === 'trainer') {
+      Model = Trainer;
+    } else {
+      Model = User;
+    }
+
+    const user = await Model.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Create the URL for the uploaded file
+    const profilePictureUrl = `/uploads/profiles/${req.file.filename}`;
+    user.profilePicture = profilePictureUrl;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Profile picture uploaded successfully.',
+      profilePicture: profilePictureUrl
+    });
+  } catch (error) {
+    console.error('Error uploading profile picture:', error);
     res.status(500).json({ message: 'Server error.', error: error.message });
   }
 };

@@ -10,7 +10,14 @@ const UserSchema = new mongoose.Schema({
     age: Number,
     gender: String,
     healthGoals: String // For customers
-   
+  },
+  profilePicture: { type: String, default: null }, // URL to profile image
+  subscription: {
+    plan: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription' },
+    startDate: { type: Date },
+    endDate: { type: Date },
+    status: { type: String, enum: ['active', 'pending', 'expired', 'cancelled', 'none'], default: 'none' },
+    paymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' }
   },
   notifications: [{ type: String }], // Notifications
   feedback: [
@@ -29,6 +36,10 @@ const UserSchema = new mongoose.Schema({
   resetTokenExpiration: { 
     type: Date, 
     default: null 
+  },
+  blocked: { 
+    type: Boolean, 
+    default: false 
   },
 }, { timestamps: true });
 

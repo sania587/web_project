@@ -11,7 +11,7 @@ router.get('/search', trainerManageController.searchTrainerByName);
 // Route to delete a trainer
 router.delete('/:id', trainerManageController.deleteTrainer);
 
-// Route to block (delete) a trainer
-router.delete('/block/:id', trainerManageController.blockTrainer);
+// Route to toggle block/unblock a trainer
+router.put('/block/:id', trainerManageController.toggleBlockTrainer);
 
 module.exports = router;

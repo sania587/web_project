@@ -19,6 +19,8 @@ const TrainerSchema = new mongoose.Schema({
   specialization: { type: String },
   availability: { type: [String] }, // Time slots
   
+  profilePicture: { type: String, default: null }, // URL to profile image
+  
   notifications: [{ type: String }],
   feedback: [
     { 
@@ -36,6 +38,10 @@ const TrainerSchema = new mongoose.Schema({
   resetTokenExpiration: { 
     type: Date, 
     default: null 
+  },
+  blocked: { 
+    type: Boolean, 
+    default: false 
   },
 }, { timestamps: true });
 

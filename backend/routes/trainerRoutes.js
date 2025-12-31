@@ -3,13 +3,13 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Trainer = require('../models/Trainer');
 const { getTrainerProfile, updateTrainerProfile, createWorkoutPlan } = require('../controllers/trainerController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
 // Signup endpoint for trainers
 router.post('/signup', async (req, res) => {
-  const { name, email, password, expertise, experience, specializations, certifications } = req.body;
+  const { name, email, password, expertise, experience, age, specializations, certifications } = req.body;
 
   try {
     // Check if the email already exists
@@ -28,6 +28,7 @@ router.post('/signup', async (req, res) => {
       password: hashedPassword,
       role: 'trainer',
       profileDetails: {
+        age: age || null, // Save age inside profileDetails
         specializations: specializations || [],
         certifications: certifications || [],
       },
@@ -57,8 +58,8 @@ router.post('/signup', async (req, res) => {
 });
 
 // Protected Trainer Routes
-router.get('/profile', authMiddleware, getTrainerProfile);
-router.put('/profile', authMiddleware, updateTrainerProfile);
-router.post('/plans', authMiddleware, createWorkoutPlan);
+router.get('/profile', protect, getTrainerProfile);
+router.put('/profile', protect, updateTrainerProfile);
+router.post('/plans', protect, createWorkoutPlan);
 
 module.exports = router;

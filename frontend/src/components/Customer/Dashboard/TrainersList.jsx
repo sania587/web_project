@@ -1,89 +1,114 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useTheme } from '../../../context/ThemeContext';
+import { FaStar, FaClock, FaDumbbell } from 'react-icons/fa';
 
-const TrainersList = () => {
-  const [trainers, setTrainers] = useState([]);
-  const [filters, setFilters] = useState({ rating: '', availability: '', specialty: '' });
-  const [loading, setLoading] = useState(true); // For loading state
-  const [error, setError] = useState(null); // For error state
-
-  useEffect(() => {
-    const fetchTrainers = async () => {
-      try {
-        const { data } = await axios.get('/api/dashboard/trainers', { params: filters });
-
-        // Ensure the data is an array
-        if (Array.isArray(data)) {
-          setTrainers(data);
-        } else {
-          setTrainers([]); // Fallback to an empty array if the data is not an array
-        }
-      } catch (error) {
-        console.error('Error fetching trainers:', error);
-        setError('Failed to fetch trainers');
-        setTrainers([]); // Fallback to an empty array in case of error
-      } finally {
-        setLoading(false); // Stop loading once the request finishes
-      }
-    };
-
-    fetchTrainers();
-  }, [filters]);
-
-  const handleFilterChange = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
-  };
+const TrainersList = ({ trainers = [], loading, filters, onFilterChange }) => {
+  const { theme, isDark } = useTheme();
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Trainers List</h2>
-
-      {/* Filter Inputs */}
-      <div className="mb-6 space-y-4 md:flex md:space-x-6 md:space-y-0">
-        <input
-          name="rating"
-          type="number"
-          placeholder="Minimum Rating"
-          value={filters.rating}
-          onChange={handleFilterChange}
-          className="w-full md:w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-        <input
-          name="availability"
-          type="text"
-          placeholder="Availability"
-          value={filters.availability}
-          onChange={handleFilterChange}
-          className="w-full md:w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-        <input
-          name="specialty"
-          type="text"
-          placeholder="Specialty"
-          value={filters.specialty}
-          onChange={handleFilterChange}
-          className="w-full md:w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
+    <div>
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <h2 
+          className="text-xl font-bold"
+          style={{ color: theme.colors.text }}
+        >
+          Available Trainers
+        </h2>
+        
+        {/* Compact Filters */}
+        <div className="flex gap-2 w-full md:w-auto">
+           <input
+            name="rating"
+            type="number"
+            placeholder="Min Rating"
+            value={filters.rating}
+            onChange={onFilterChange}
+            className="w-full md:w-24 px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2"
+            style={{ 
+              backgroundColor: theme.colors.background,
+              borderColor: theme.colors.border,
+              color: theme.colors.text,
+              '--tw-ring-color': theme.colors.primary
+            }}
+          />
+          <input
+            name="specialty"
+            type="text"
+            placeholder="Specialty"
+            value={filters.specialty}
+            onChange={onFilterChange}
+            className="w-full md:w-32 px-3 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2"
+            style={{ 
+              backgroundColor: theme.colors.background,
+              borderColor: theme.colors.border,
+              color: theme.colors.text,
+              '--tw-ring-color': theme.colors.primary
+            }}
+          />
+        </div>
       </div>
 
-      {/* Loading, Error, or Trainers List */}
       {loading ? (
-        <p className="text-xl text-gray-500">Loading...</p>
-      ) : error ? (
-        <p className="text-xl text-red-600">{error}</p> // Show error message if fetching fails
-      ) : trainers.length === 0 ? (
-        <p className="text-xl text-gray-600">No trainers found.</p> // Show message if no trainers found
-      ) : (
-        <ul className="space-y-4">
+         <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderColor: theme.colors.primary }}></div>
+         </div>
+      ) : Array.isArray(trainers) && trainers.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {trainers.map((trainer) => (
-            <li key={trainer.id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-6 hover:shadow-xl transition-all">
-              <h3 className="text-2xl font-semibold text-gray-800">{trainer.name}</h3>
-              <p className="text-gray-600 mt-2">Rating: {trainer.rating}</p>
-              <p className="text-gray-600 mt-2">Specialties: {trainer.specializations.join(', ')}</p>
-              <p className="text-gray-600 mt-2">Availability: {trainer.availability}</p>
-            </li>
+            <div 
+              key={trainer.id} 
+              className="p-5 rounded-xl border transition-all hover:shadow-lg hover:-translate-y-1"
+              style={{ 
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border
+              }}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white uppercase"
+                  style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
+                >
+                  {trainer.name?.charAt(0) || 'T'}
+                </div>
+                <div className="flex items-center gap-1 bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-xs font-bold">
+                  <FaStar className="text-yellow-500" />
+                  {Number(trainer.rating || 0).toFixed(1)}
+                </div>
+              </div>
+
+              <h3 
+                className="text-lg font-bold mb-2"
+                style={{ color: theme.colors.text }}
+              >
+                {trainer.name}
+              </h3>
+
+              <div className="space-y-2 text-sm">
+                 <div className="flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                   <FaDumbbell className="text-xs" />
+                   <span className="truncate">{Array.isArray(trainer.specializations) ? trainer.specializations.join(', ') : 'General'}</span>
+                 </div>
+                 <div className="flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                   <FaClock className="text-xs" />
+                   <span>{trainer.availability || 'Not specified'}</span>
+                 </div>
+              </div>
+
+              <button 
+                className="w-full mt-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                style={{ 
+                  backgroundColor: theme.colors.primary + '15', 
+                  color: theme.colors.primary 
+                }}
+              >
+                View Profile
+              </button>
+            </div>
           ))}
-        </ul>
+        </div>
+      ) : (
+        <div className="text-center py-8" style={{ color: theme.colors.textMuted }}>
+           No trainers found.
+        </div>
       )}
     </div>
   );

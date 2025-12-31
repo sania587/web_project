@@ -1,11 +1,11 @@
-import React from 'react';
-import PaymentComponent from '../../components/Admin/PaymentComponent'; // Import PaymentComponent
+import AdminLayout from '../../components/Admin/AdminLayout';
+import PaymentComponent from '../../components/Admin/PaymentComponent';
 
 const PaymentPage = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <AdminLayout>
       <PaymentComponent />
-    </div>
+    </AdminLayout>
   );
 };
 

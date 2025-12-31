@@ -10,6 +10,7 @@ const AdminSchema = new mongoose.Schema({
     age: Number,
     gender: String
   },
+  profilePicture: { type: String, default: null }, // URL to profile image
   notifications: [{ type: String }],
   feedback: [
     { 
