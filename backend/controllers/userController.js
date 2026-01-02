@@ -24,9 +24,15 @@ exports.signup = async (req, res) => {
       email,
       password,
       role,
+      phone,
       age,
       gender,
+      height,
+      weight,
+      fitnessLevel,
       healthGoals,
+      healthConditions,
+      preferredWorkoutTime,
       specializations,
       certifications,
     } = req.body;
@@ -48,13 +54,18 @@ exports.signup = async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create the profileDetails object (this is the new part)
+    // Create the profileDetails object with comprehensive fields
     const profileDetails = {
-      age,
+      age: parseInt(age) || undefined,
       gender,
+      height: parseFloat(height) || undefined,
+      weight: parseFloat(weight) || undefined,
+      fitnessLevel,
       healthGoals,
-      specializations,
-      certifications,
+      healthConditions,
+      preferredWorkoutTime,
+      specializations: specializations || [],
+      certifications: certifications || [],
     };
 
     // Create the user based on the role
@@ -73,7 +84,8 @@ exports.signup = async (req, res) => {
         email,
         password: hashedPassword,
         role: 'trainer',
-        profileDetails,  // Include profileDetails for Trainer
+        phone,
+        profileDetails,
       });
     } else if (role === 'customer') {
       user = new User({
@@ -81,7 +93,8 @@ exports.signup = async (req, res) => {
         email,
         password: hashedPassword,
         role: 'customer',
-        profileDetails,  // Include profileDetails for Customer
+        phone,
+        profileDetails,
       });
     } else {
       return res.status(400).json({ message: 'Invalid role.' });
@@ -99,7 +112,8 @@ exports.signup = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        profileDetails: user.profileDetails,  // Return profile details
+        phone: user.phone,
+        profileDetails: user.profileDetails,
       },
       token,
     });
@@ -275,7 +289,29 @@ exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
-    const { name, age, gender, healthGoals, specializations, certifications } = req.body;
+    const {
+      name,
+      phone,
+      age,
+      gender,
+      newPassword, // For Google users to set password
+      // Customer fields
+      height,
+      weight,
+      fitnessLevel,
+      healthGoals,
+      healthConditions,
+      preferredWorkoutTime,
+      emergencyContact,
+      // Trainer fields
+      bio,
+      hourlyRate,
+      yearsExperience,
+      specializations,
+      certifications,
+      languages,
+      socialLinks
+    } = req.body;
 
     let Model;
     if (userRole === 'admin') {
@@ -291,26 +327,61 @@ exports.updateProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
+    // Update password if provided (for Google users setting up password)
+    if (newPassword && newPassword.length >= 6) {
+      user.password = await bcrypt.hash(newPassword, 10);
+    }
+
     // Update basic fields
     if (name) user.name = name;
+    if (phone !== undefined) user.phone = phone;
 
-    // Update profile details based on role
+    // Initialize profileDetails if not exists
     if (!user.profileDetails) {
       user.profileDetails = {};
     }
     
-    if (age) user.profileDetails.age = age;
-    if (gender) user.profileDetails.gender = gender;
+    // Common profile fields
+    if (age !== undefined) user.profileDetails.age = parseInt(age) || undefined;
+    if (gender !== undefined) user.profileDetails.gender = gender;
     
-    // Customer-specific
-    if (userRole === 'customer' && healthGoals) {
-      user.profileDetails.healthGoals = healthGoals;
+    // Customer-specific fields
+    if (userRole === 'customer') {
+      if (height !== undefined) user.profileDetails.height = parseFloat(height) || undefined;
+      if (weight !== undefined) user.profileDetails.weight = parseFloat(weight) || undefined;
+      if (fitnessLevel !== undefined) user.profileDetails.fitnessLevel = fitnessLevel;
+      if (healthGoals !== undefined) user.profileDetails.healthGoals = healthGoals;
+      if (healthConditions !== undefined) user.profileDetails.healthConditions = healthConditions;
+      if (preferredWorkoutTime !== undefined) user.profileDetails.preferredWorkoutTime = preferredWorkoutTime;
+      
+      // Emergency contact
+      if (emergencyContact) {
+        user.emergencyContact = {
+          name: emergencyContact.name || user.emergencyContact?.name,
+          phone: emergencyContact.phone || user.emergencyContact?.phone,
+          relationship: emergencyContact.relationship || user.emergencyContact?.relationship
+        };
+      }
     }
     
-    // Trainer-specific
+    // Trainer-specific fields
     if (userRole === 'trainer') {
-      if (specializations) user.profileDetails.specializations = specializations;
-      if (certifications) user.profileDetails.certifications = certifications;
+      if (bio !== undefined) user.bio = bio;
+      if (hourlyRate !== undefined) user.hourlyRate = parseFloat(hourlyRate) || undefined;
+      if (yearsExperience !== undefined) user.yearsExperience = parseInt(yearsExperience) || undefined;
+      if (languages !== undefined) user.languages = languages;
+      if (specializations !== undefined) user.profileDetails.specializations = specializations;
+      if (certifications !== undefined) user.profileDetails.certifications = certifications;
+      
+      // Social links
+      if (socialLinks) {
+        user.socialLinks = {
+          instagram: socialLinks.instagram || user.socialLinks?.instagram,
+          linkedin: socialLinks.linkedin || user.socialLinks?.linkedin,
+          youtube: socialLinks.youtube || user.socialLinks?.youtube,
+          website: socialLinks.website || user.socialLinks?.website
+        };
+      }
     }
 
     await user.save();
@@ -322,8 +393,15 @@ exports.updateProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        phone: user.phone,
         profileDetails: user.profileDetails,
-        profilePicture: user.profilePicture
+        profilePicture: user.profilePicture,
+        emergencyContact: user.emergencyContact,
+        bio: user.bio,
+        hourlyRate: user.hourlyRate,
+        yearsExperience: user.yearsExperience,
+        languages: user.languages,
+        socialLinks: user.socialLinks
       }
     });
   } catch (error) {

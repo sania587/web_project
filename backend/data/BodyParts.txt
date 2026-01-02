@@ -1,6 +1,6 @@
 0:"back"
 {0:
-bodyPart:"back"
+bodyPart:"back"~
 equipment:"cable"
 id:"0007"
 name:"alternate lateral pulldown"

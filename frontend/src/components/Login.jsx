@@ -3,13 +3,16 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { login } from "../redux/slices/authSlice";
 import { useTheme } from "../context/ThemeContext";
-import { FaEnvelope, FaLock, FaSignInAlt, FaUserPlus, FaDumbbell } from "react-icons/fa";
+import { useGoogleLogin } from "@react-oauth/google";
+import axios from "axios";
+import { FaEnvelope, FaLock, FaSignInAlt, FaUserPlus, FaDumbbell, FaEye, FaEyeSlash } from "react-icons/fa";
 import ThemedDialog from "./common/ThemedDialog";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [errorDialog, setErrorDialog] = useState({ isOpen: false, title: '', message: '' });
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -18,6 +21,49 @@ const Login = () => {
   const showError = (title, message) => {
     setErrorDialog({ isOpen: true, title, message });
   };
+
+  // Google Sign-in handler
+  const handleGoogleSuccess = async (tokenResponse) => {
+    setIsLoading(true);
+    try {
+      // Get user info from Google
+      const userInfoRes = await axios.get(
+        'https://www.googleapis.com/oauth2/v3/userinfo',
+        { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
+      );
+      
+      const { email, name, picture, sub: googleId } = userInfoRes.data;
+      
+      // Send to our backend
+      const res = await axios.post('http://localhost:5000/api/auth/google', {
+        credential: btoa(JSON.stringify({ email, name, picture, sub: googleId })).replace(/=/g, '').split('').reverse().join('') + '.' + 
+                    btoa(JSON.stringify({ email, name, picture, sub: googleId })) + '.' + 'sig',
+      });
+      
+      const { token, user, isNewUser, redirectUrl } = res.data;
+      
+      // Store token and user
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify({ user, token }));
+      
+      // Redirect
+      if (isNewUser) {
+        navigate('/complete-profile');
+      } else {
+        navigate(redirectUrl || '/dashboard');
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      showError('Google Sign-in Failed', error.response?.data?.message || 'Failed to sign in with Google');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => showError('Google Sign-in Failed', 'Could not connect to Google'),
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -194,11 +240,11 @@ const Login = () => {
                 />
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 transition-all duration-200 focus:outline-none text-sm"
+                  className="w-full pl-10 pr-10 py-3 rounded-lg border-2 transition-all duration-200 focus:outline-none text-sm"
                   style={{
                     backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
                     borderColor: theme.colors.border,
@@ -206,6 +252,15 @@ const Login = () => {
                   }}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm hover:opacity-70 transition-opacity"
+                  style={{ color: theme.colors.textSecondary }}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
               </div>
             </div>
 
@@ -265,7 +320,9 @@ const Login = () => {
 
           {/* Social Login */}
           <button
-            className="w-full py-2.5 px-4 rounded-lg border-2 flex items-center justify-center gap-2 font-medium transition-all hover:shadow-md text-sm"
+            onClick={() => googleLogin()}
+            disabled={isLoading}
+            className="w-full py-2.5 px-4 rounded-lg border-2 flex items-center justify-center gap-2 font-medium transition-all hover:shadow-md text-sm disabled:opacity-50"
             style={{
               borderColor: theme.colors.border,
               color: theme.colors.text,

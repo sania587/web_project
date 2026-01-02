@@ -56,7 +56,7 @@ const TrainerDashboard = () => {
   const stats = [
     { label: 'Active Clients', value: '0', icon: FaUsers, change: '+0%', positive: true },
     { label: 'Sessions This Week', value: '0', icon: FaCalendarAlt, change: '0', positive: true },
-    { label: 'Avg Rating', value: '4.8', icon: FaStar, change: '+0.2', positive: true },
+    { label: 'Avg Rating', value: 'N/A', icon: FaStar, change: 'New', positive: true },
     { label: 'Workout Plans', value: '0', icon: FaDumbbell, change: '+0', positive: true },
   ]
 
@@ -255,13 +255,16 @@ const TrainerDashboard = () => {
                   <span className="text-sm" style={{ color: theme.colors.textSecondary }}>Your Rating</span>
                   <div className="flex items-center gap-1">
                     <FaStar className="text-yellow-400" />
-                    <span className="font-bold" style={{ color: theme.colors.text }}>4.8</span>
+                    <span className="font-bold" style={{ color: theme.colors.text }}>N/A</span>
                   </div>
                 </div>
-                <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700">
+                <div 
+                  className="w-full h-2 rounded-full"
+                  style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : theme.colors.border }}
+                >
                   <div 
                     className="h-2 rounded-full"
-                    style={{ width: '96%', background: `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
+                    style={{ width: '0%', background: `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
                   />
                 </div>
               </div>
@@ -273,12 +276,15 @@ const TrainerDashboard = () => {
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm" style={{ color: theme.colors.textSecondary }}>Session Completion</span>
-                  <span className="font-bold" style={{ color: theme.colors.text }}>100%</span>
+                  <span className="font-bold" style={{ color: theme.colors.text }}>N/A</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700">
+                <div 
+                  className="w-full h-2 rounded-full"
+                  style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : theme.colors.border }}
+                >
                   <div 
                     className="h-2 rounded-full bg-green-500"
-                    style={{ width: '100%' }}
+                    style={{ width: '0%' }}
                   />
                 </div>
               </div>
@@ -292,7 +298,10 @@ const TrainerDashboard = () => {
                   <span className="text-sm" style={{ color: theme.colors.textSecondary }}>Monthly Goal</span>
                   <span className="font-bold" style={{ color: theme.colors.text }}>0/10 sessions</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700">
+                <div 
+                  className="w-full h-2 rounded-full"
+                  style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : theme.colors.border }}
+                >
                   <div 
                     className="h-2 rounded-full bg-orange-500"
                     style={{ width: '0%' }}

@@ -9,7 +9,19 @@ const router = express.Router();
 
 // Signup endpoint for trainers
 router.post('/signup', async (req, res) => {
-  const { name, email, password, expertise, experience, age, specializations, certifications } = req.body;
+  const { 
+    name, 
+    email, 
+    password, 
+    phone,
+    age, 
+    gender,
+    expertise, 
+    yearsExperience,
+    bio,
+    hourlyRate,
+    certifications 
+  } = req.body;
 
   try {
     // Check if the email already exists
@@ -21,16 +33,29 @@ router.post('/signup', async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create new trainer instance
+    // Parse certifications (comma-separated string or array)
+    let parsedCerts = [];
+    if (certifications) {
+      parsedCerts = Array.isArray(certifications) 
+        ? certifications 
+        : certifications.split(',').map(s => s.trim()).filter(s => s);
+    }
+
+    // Create new trainer instance with comprehensive fields
     const newTrainer = new Trainer({
       name,
       email,
       password: hashedPassword,
+      phone,
       role: 'trainer',
+      bio,
+      hourlyRate: parseFloat(hourlyRate) || undefined,
+      yearsExperience: parseInt(yearsExperience) || 0,
       profileDetails: {
-        age: age || null, // Save age inside profileDetails
-        specializations: specializations || [],
-        certifications: certifications || [],
+        age: parseInt(age) || undefined,
+        gender,
+        specializations: expertise ? [expertise] : [],
+        certifications: parsedCerts,
       },
       specialization: expertise,
     });

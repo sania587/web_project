@@ -11,6 +11,8 @@ import Signup from "./pages/Signup";
 import AskRole from "./pages/AskRole"; // Keeping for safety vs deletion, though unused route
 import ProfilePage from "./pages/ProfilePage";
 import LandingPage from "./pages/LandingPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import CompleteProfilePage from "./pages/CompleteProfilePage";
 
 // Admin Pages & Components
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -86,6 +88,8 @@ const AppContent = () => {
           {/* Auth Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/complete-profile" element={<CompleteProfilePage />} />
           <Route path="/profile" element={<ProfilePage />} />
 
           {/* Admin Routes */}

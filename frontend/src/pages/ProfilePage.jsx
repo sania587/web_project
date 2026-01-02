@@ -1,4 +1,4 @@
-// ProfilePage.jsx
+// ProfilePage.jsx - Comprehensive Profile with all fitness fields
 
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
@@ -21,7 +21,20 @@ import {
   FaVenusMars,
   FaBullseye,
   FaCertificate,
-  FaDumbbell
+  FaDumbbell,
+  FaPhone,
+  FaRuler,
+  FaWeight,
+  FaHeartbeat,
+  FaClock,
+  FaNotesMedical,
+  FaUserFriends,
+  FaBriefcase,
+  FaDollarSign,
+  FaGlobe,
+  FaInstagram,
+  FaLinkedin,
+  FaYoutube
 } from "react-icons/fa";
 
 const ProfilePage = () => {
@@ -39,22 +52,39 @@ const ProfilePage = () => {
   
   const [formData, setFormData] = useState({
     name: "",
+    phone: "",
     age: "",
     gender: "",
+    // Customer fields
+    height: "",
+    weight: "",
+    fitnessLevel: "",
     healthGoals: "",
+    healthConditions: "",
+    preferredWorkoutTime: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    emergencyContactRelationship: "",
+    // Trainer fields
+    bio: "",
+    hourlyRate: "",
+    yearsExperience: "",
     specializations: "",
-    certifications: ""
+    certifications: "",
+    languages: "",
+    instagram: "",
+    linkedin: "",
+    youtube: "",
+    website: "",
   });
 
   const getToken = () => {
     try {
-      // Try getting from 'user' object first
       const stored = localStorage.getItem('user');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.token) return parsed.token;
       }
-      // Also try getting standalone 'token' 
       const standaloneToken = localStorage.getItem('token');
       if (standaloneToken) return standaloneToken;
     } catch (e) {
@@ -67,25 +97,14 @@ const ProfilePage = () => {
     const fetchProfile = async () => {
       try {
         const token = getToken();
-        console.log("Token retrieved:", token ? "Found" : "Not found");
         
         if (!token) {
-          console.log("No token, using localStorage data as fallback");
-          // Try to use data from localStorage as fallback
           const stored = localStorage.getItem('user');
           if (stored) {
             const parsed = JSON.parse(stored);
             const fallbackUser = parsed.user || parsed;
-            console.log("Fallback user data:", fallbackUser);
             setUserData(fallbackUser);
-            setFormData({
-              name: fallbackUser.name || "",
-              age: fallbackUser.profileDetails?.age || "",
-              gender: fallbackUser.profileDetails?.gender || "",
-              healthGoals: fallbackUser.profileDetails?.healthGoals || "",
-              specializations: fallbackUser.profileDetails?.specializations?.join(", ") || "",
-              certifications: fallbackUser.profileDetails?.certifications?.join(", ") || ""
-            });
+            populateFormData(fallbackUser);
             setIsLoading(false);
             return;
           }
@@ -96,36 +115,17 @@ const ProfilePage = () => {
         const response = await axios.get("/api/users/profile", {
           headers: { Authorization: `Bearer ${token}` }
         });
-        console.log("Profile API response:", response.data);
         setUserData(response.data);
-        setFormData({
-          name: response.data.name || "",
-          age: response.data.profileDetails?.age || "",
-          gender: response.data.profileDetails?.gender || "",
-          healthGoals: response.data.profileDetails?.healthGoals || "",
-          specializations: response.data.profileDetails?.specializations?.join(", ") || "",
-          certifications: response.data.profileDetails?.certifications?.join(", ") || ""
-        });
+        populateFormData(response.data);
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching profile:", error);
-        console.error("Error details:", error.response?.data || error.message);
-        
-        // Try fallback to localStorage
         const stored = localStorage.getItem('user');
         if (stored) {
           const parsed = JSON.parse(stored);
           const fallbackUser = parsed.user || parsed;
-          console.log("Using fallback user data after error:", fallbackUser);
           setUserData(fallbackUser);
-          setFormData({
-            name: fallbackUser.name || "",
-            age: fallbackUser.profileDetails?.age || "",
-            gender: fallbackUser.profileDetails?.gender || "",
-            healthGoals: fallbackUser.profileDetails?.healthGoals || "",
-            specializations: fallbackUser.profileDetails?.specializations?.join(", ") || "",
-            certifications: fallbackUser.profileDetails?.certifications?.join(", ") || ""
-          });
+          populateFormData(fallbackUser);
           setIsLoading(false);
           setError("Could not refresh profile data. Showing cached data.");
         } else {
@@ -135,6 +135,36 @@ const ProfilePage = () => {
     };
     fetchProfile();
   }, [navigate]);
+
+  const populateFormData = (user) => {
+    setFormData({
+      name: user.name || "",
+      phone: user.phone || "",
+      age: user.profileDetails?.age || "",
+      gender: user.profileDetails?.gender || "",
+      // Customer fields
+      height: user.profileDetails?.height || "",
+      weight: user.profileDetails?.weight || "",
+      fitnessLevel: user.profileDetails?.fitnessLevel || "",
+      healthGoals: user.profileDetails?.healthGoals || "",
+      healthConditions: user.profileDetails?.healthConditions || "",
+      preferredWorkoutTime: user.profileDetails?.preferredWorkoutTime || "",
+      emergencyContactName: user.emergencyContact?.name || "",
+      emergencyContactPhone: user.emergencyContact?.phone || "",
+      emergencyContactRelationship: user.emergencyContact?.relationship || "",
+      // Trainer fields
+      bio: user.bio || "",
+      hourlyRate: user.hourlyRate || "",
+      yearsExperience: user.yearsExperience || "",
+      specializations: user.profileDetails?.specializations?.join(", ") || "",
+      certifications: user.profileDetails?.certifications?.join(", ") || "",
+      languages: user.languages?.join(", ") || "",
+      instagram: user.socialLinks?.instagram || "",
+      linkedin: user.socialLinks?.linkedin || "",
+      youtube: user.socialLinks?.youtube || "",
+      website: user.socialLinks?.website || "",
+    });
+  };
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -147,11 +177,33 @@ const ProfilePage = () => {
       
       const updateData = {
         name: formData.name,
+        phone: formData.phone,
         age: parseInt(formData.age) || undefined,
         gender: formData.gender,
+        height: parseFloat(formData.height) || undefined,
+        weight: parseFloat(formData.weight) || undefined,
+        fitnessLevel: formData.fitnessLevel,
         healthGoals: formData.healthGoals,
+        healthConditions: formData.healthConditions,
+        preferredWorkoutTime: formData.preferredWorkoutTime,
+        emergencyContact: {
+          name: formData.emergencyContactName,
+          phone: formData.emergencyContactPhone,
+          relationship: formData.emergencyContactRelationship,
+        },
+        // Trainer fields
+        bio: formData.bio,
+        hourlyRate: parseFloat(formData.hourlyRate) || undefined,
+        yearsExperience: parseInt(formData.yearsExperience) || undefined,
         specializations: formData.specializations.split(",").map(s => s.trim()).filter(s => s),
-        certifications: formData.certifications.split(",").map(s => s.trim()).filter(s => s)
+        certifications: formData.certifications.split(",").map(s => s.trim()).filter(s => s),
+        languages: formData.languages.split(",").map(s => s.trim()).filter(s => s),
+        socialLinks: {
+          instagram: formData.instagram,
+          linkedin: formData.linkedin,
+          youtube: formData.youtube,
+          website: formData.website,
+        }
       };
 
       const response = await axios.put("/api/users/profile", updateData, {
@@ -220,7 +272,6 @@ const ProfilePage = () => {
   const apiUrl = import.meta.env.VITE_API_URL || '';
   const profilePicUrl = userData?.profilePicture ? `${apiUrl}${userData.profilePicture}` : null;
 
-  // Layout wrapper based on role
   const LayoutWrapper = ({ children }) => {
     switch (userData?.role) {
       case 'admin':
@@ -233,33 +284,45 @@ const ProfilePage = () => {
     }
   };
 
+  const inputStyle = {
+    backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
+    borderColor: theme.colors.border,
+    color: theme.colors.text
+  };
+
+  const FieldDisplay = ({ value, placeholder = "Not set" }) => (
+    <p 
+      className="p-3 rounded-xl"
+      style={{ backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc', color: theme.colors.text }}
+    >
+      {value || placeholder}
+    </p>
+  );
+
   return (
     <LayoutWrapper>
       <div 
         className="min-h-screen py-8 px-4"
         style={{ backgroundColor: theme.colors.background }}
       >
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-3xl mx-auto space-y-6">
         
         {/* Success/Error Messages */}
         {success && (
-          <div className="mb-4 p-4 rounded-xl bg-green-100 text-green-800 border border-green-300">
+          <div className="p-4 rounded-xl bg-green-100 text-green-800 border border-green-300">
             {success}
           </div>
         )}
         {error && (
-          <div className="mb-4 p-4 rounded-xl bg-red-100 text-red-800 border border-red-300">
+          <div className="p-4 rounded-xl bg-red-100 text-red-800 border border-red-300">
             {error}
           </div>
         )}
 
         {/* Profile Header Card */}
         <div 
-          className="rounded-2xl p-6 mb-6 border"
-          style={{ 
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border
-          }}
+          className="rounded-2xl p-6 border"
+          style={{ backgroundColor: theme.colors.surface, borderColor: theme.colors.border }}
         >
           <div className="flex flex-col sm:flex-row items-center gap-6">
             {/* Profile Picture */}
@@ -270,18 +333,11 @@ const ProfilePage = () => {
                 onClick={handlePictureClick}
               >
                 {profilePicUrl ? (
-                  <img 
-                    src={profilePicUrl} 
-                    alt="Profile" 
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={profilePicUrl} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <div 
                     className="w-full h-full flex items-center justify-center text-4xl"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})`,
-                      color: 'white'
-                    }}
+                    style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})`, color: 'white' }}
                   >
                     {userData?.name?.charAt(0)?.toUpperCase() || <FaUser />}
                   </div>
@@ -295,326 +351,369 @@ const ProfilePage = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
                 </div>
               )}
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handlePictureUpload}
-                accept="image/*"
-                className="hidden"
-              />
+              <input type="file" ref={fileInputRef} onChange={handlePictureUpload} accept="image/*" className="hidden" />
             </div>
 
             {/* User Info */}
             <div className="flex-1 text-center sm:text-left">
-              <h1 
-                className="text-2xl font-bold mb-1"
-                style={{ color: theme.colors.text }}
-              >
-                {userData?.name}
-              </h1>
-              <p 
-                className="flex items-center justify-center sm:justify-start gap-2 mb-2"
-                style={{ color: theme.colors.textSecondary }}
-              >
-                <FaEnvelope className="text-sm" />
-                {userData?.email}
+              <h1 className="text-2xl font-bold mb-1" style={{ color: theme.colors.text }}>{userData?.name}</h1>
+              <p className="flex items-center justify-center sm:justify-start gap-2 mb-2" style={{ color: theme.colors.textSecondary }}>
+                <FaEnvelope className="text-sm" /> {userData?.email}
               </p>
+              {userData?.phone && (
+                <p className="flex items-center justify-center sm:justify-start gap-2 mb-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaPhone className="text-sm" /> {userData.phone}
+                </p>
+              )}
               <span 
                 className="inline-block px-3 py-1 rounded-full text-sm font-medium capitalize"
-                style={{ 
-                  backgroundColor: theme.colors.primary + "20",
-                  color: theme.colors.primary
-                }}
+                style={{ backgroundColor: theme.colors.primary + "20", color: theme.colors.primary }}
               >
                 {userData?.role}
               </span>
             </div>
 
             {/* Edit Button */}
-            <button
-              onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all hover:scale-105"
-              style={{ 
-                backgroundColor: isEditing ? "#10b981" : theme.colors.primary,
-                color: 'white'
-              }}
-            >
-              {isEditing ? <FaSave /> : <FaEdit />}
-              {isEditing ? "Save" : "Edit"}
-            </button>
-            {isEditing && (
+            <div className="flex gap-2">
               <button
-                onClick={() => setIsEditing(false)}
+                onClick={() => isEditing ? handleSave() : setIsEditing(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all hover:scale-105"
-                style={{ 
-                  backgroundColor: isDark ? theme.colors.surfaceHover : '#f1f5f9',
-                  color: theme.colors.text
-                }}
+                style={{ backgroundColor: isEditing ? "#10b981" : theme.colors.primary, color: 'white' }}
               >
-                <FaTimes />
-                Cancel
+                {isEditing ? <FaSave /> : <FaEdit />}
+                {isEditing ? "Save" : "Edit"}
               </button>
-            )}
+              {isEditing && (
+                <button
+                  onClick={() => { setIsEditing(false); populateFormData(userData); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all hover:scale-105"
+                  style={{ backgroundColor: isDark ? theme.colors.surfaceHover : '#f1f5f9', color: theme.colors.text }}
+                >
+                  <FaTimes /> Cancel
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Profile Details Card */}
-        <div 
-          className="rounded-2xl p-6 mb-6 border"
-          style={{ 
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border
-          }}
-        >
-          <h2 
-            className="text-lg font-bold mb-5 flex items-center gap-2"
-            style={{ color: theme.colors.text }}
-          >
-            <FaUser style={{ color: theme.colors.primary }} />
-            Profile Details
+        {/* Basic Details Card */}
+        <div className="rounded-2xl p-6 border" style={{ backgroundColor: theme.colors.surface, borderColor: theme.colors.border }}>
+          <h2 className="text-lg font-bold mb-5 flex items-center gap-2" style={{ color: theme.colors.text }}>
+            <FaUser style={{ color: theme.colors.primary }} /> Basic Information
           </h2>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Name */}
             <div>
-              <label 
-                className="block text-sm font-medium mb-1"
-                style={{ color: theme.colors.textSecondary }}
-              >
-                Full Name
+              <label className="block text-sm font-medium mb-1" style={{ color: theme.colors.textSecondary }}>Full Name</label>
+              {isEditing ? (
+                <input type="text" name="name" value={formData.name} onChange={handleInputChange}
+                  className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+              ) : <FieldDisplay value={userData?.name} />}
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                <FaPhone /> Phone
               </label>
               {isEditing ? (
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full p-3 rounded-xl border outline-none transition-all focus:ring-2"
-                  style={{ 
-                    backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                    borderColor: theme.colors.border,
-                    color: theme.colors.text
-                  }}
-                />
-              ) : (
-                <p 
-                  className="p-3 rounded-xl"
-                  style={{ 
-                    backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                    color: theme.colors.text
-                  }}
-                >
-                  {userData?.name || "Not set"}
-                </p>
-              )}
+                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange}
+                  className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+              ) : <FieldDisplay value={userData?.phone} />}
             </div>
 
             {/* Age */}
             <div>
-              <label 
-                className="block text-sm font-medium mb-1 flex items-center gap-2"
-                style={{ color: theme.colors.textSecondary }}
-              >
+              <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
                 <FaBirthdayCake /> Age
               </label>
               {isEditing ? (
-                <input
-                  type="number"
-                  name="age"
-                  value={formData.age}
-                  onChange={handleInputChange}
-                  className="w-full p-3 rounded-xl border outline-none transition-all focus:ring-2"
-                  style={{ 
-                    backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                    borderColor: theme.colors.border,
-                    color: theme.colors.text
-                  }}
-                />
-              ) : (
-                <p 
-                  className="p-3 rounded-xl"
-                  style={{ 
-                    backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                    color: theme.colors.text
-                  }}
-                >
-                  {userData?.profileDetails?.age || "Not set"}
-                </p>
-              )}
+                <input type="number" name="age" value={formData.age} onChange={handleInputChange}
+                  className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+              ) : <FieldDisplay value={userData?.profileDetails?.age} />}
             </div>
 
             {/* Gender */}
             <div>
-              <label 
-                className="block text-sm font-medium mb-1 flex items-center gap-2"
-                style={{ color: theme.colors.textSecondary }}
-              >
+              <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
                 <FaVenusMars /> Gender
               </label>
               {isEditing ? (
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleInputChange}
-                  className="w-full p-3 rounded-xl border outline-none transition-all focus:ring-2"
-                  style={{ 
-                    backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                    borderColor: theme.colors.border,
-                    color: theme.colors.text
-                  }}
-                >
+                <select name="gender" value={formData.gender} onChange={handleInputChange}
+                  className="w-full p-3 rounded-xl border outline-none" style={inputStyle}>
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
-              ) : (
-                <p 
-                  className="p-3 rounded-xl"
-                  style={{ 
-                    backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                    color: theme.colors.text
-                  }}
-                >
-                  {userData?.profileDetails?.gender || "Not set"}
-                </p>
-              )}
+              ) : <FieldDisplay value={userData?.profileDetails?.gender} />}
             </div>
-
-            {/* Health Goals (Customer only) */}
-            {userData?.role === 'customer' && (
-              <div className="md:col-span-2">
-                <label 
-                  className="block text-sm font-medium mb-1 flex items-center gap-2"
-                  style={{ color: theme.colors.textSecondary }}
-                >
-                  <FaBullseye /> Health Goals
-                </label>
-                {isEditing ? (
-                  <textarea
-                    name="healthGoals"
-                    value={formData.healthGoals}
-                    onChange={handleInputChange}
-                    rows="2"
-                    className="w-full p-3 rounded-xl border outline-none transition-all focus:ring-2 resize-none"
-                    style={{ 
-                      backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                      borderColor: theme.colors.border,
-                      color: theme.colors.text
-                    }}
-                  />
-                ) : (
-                  <p 
-                    className="p-3 rounded-xl"
-                    style={{ 
-                      backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                      color: theme.colors.text
-                    }}
-                  >
-                    {userData?.profileDetails?.healthGoals || "Not set"}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Specializations (Trainer only) */}
-            {userData?.role === 'trainer' && (
-              <>
-                <div className="md:col-span-2">
-                  <label 
-                    className="block text-sm font-medium mb-1 flex items-center gap-2"
-                    style={{ color: theme.colors.textSecondary }}
-                  >
-                    <FaDumbbell /> Specializations (comma-separated)
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="specializations"
-                      value={formData.specializations}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Weight Training, Cardio, Yoga"
-                      className="w-full p-3 rounded-xl border outline-none transition-all focus:ring-2"
-                      style={{ 
-                        backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                        borderColor: theme.colors.border,
-                        color: theme.colors.text
-                      }}
-                    />
-                  ) : (
-                    <p 
-                      className="p-3 rounded-xl"
-                      style={{ 
-                        backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                        color: theme.colors.text
-                      }}
-                    >
-                      {userData?.profileDetails?.specializations?.join(", ") || "Not set"}
-                    </p>
-                  )}
-                </div>
-                <div className="md:col-span-2">
-                  <label 
-                    className="block text-sm font-medium mb-1 flex items-center gap-2"
-                    style={{ color: theme.colors.textSecondary }}
-                  >
-                    <FaCertificate /> Certifications (comma-separated)
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="certifications"
-                      value={formData.certifications}
-                      onChange={handleInputChange}
-                      placeholder="e.g., ACE, NASM, CrossFit Level 1"
-                      className="w-full p-3 rounded-xl border outline-none transition-all focus:ring-2"
-                      style={{ 
-                        backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                        borderColor: theme.colors.border,
-                        color: theme.colors.text
-                      }}
-                    />
-                  ) : (
-                    <p 
-                      className="p-3 rounded-xl"
-                      style={{ 
-                        backgroundColor: isDark ? theme.colors.surfaceHover : '#f8fafc',
-                        color: theme.colors.text
-                      }}
-                    >
-                      {userData?.profileDetails?.certifications?.join(", ") || "Not set"}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
           </div>
         </div>
 
+        {/* Physical Details Card (Customer only) */}
+        {userData?.role === 'customer' && (
+          <div className="rounded-2xl p-6 border" style={{ backgroundColor: theme.colors.surface, borderColor: theme.colors.border }}>
+            <h2 className="text-lg font-bold mb-5 flex items-center gap-2" style={{ color: theme.colors.text }}>
+              <FaHeartbeat style={{ color: theme.colors.primary }} /> Physical Details
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Height */}
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaRuler /> Height (cm)
+                </label>
+                {isEditing ? (
+                  <input type="number" name="height" value={formData.height} onChange={handleInputChange}
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.profileDetails?.height ? `${userData.profileDetails.height} cm` : null} />}
+              </div>
+
+              {/* Weight */}
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaWeight /> Weight (kg)
+                </label>
+                {isEditing ? (
+                  <input type="number" name="weight" value={formData.weight} onChange={handleInputChange}
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.profileDetails?.weight ? `${userData.profileDetails.weight} kg` : null} />}
+              </div>
+
+              {/* Fitness Level */}
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaDumbbell /> Fitness Level
+                </label>
+                {isEditing ? (
+                  <select name="fitnessLevel" value={formData.fitnessLevel} onChange={handleInputChange}
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle}>
+                    <option value="">Select Level</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                ) : <FieldDisplay value={userData?.profileDetails?.fitnessLevel} />}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Fitness Goals Card (Customer only) */}
+        {userData?.role === 'customer' && (
+          <div className="rounded-2xl p-6 border" style={{ backgroundColor: theme.colors.surface, borderColor: theme.colors.border }}>
+            <h2 className="text-lg font-bold mb-5 flex items-center gap-2" style={{ color: theme.colors.text }}>
+              <FaBullseye style={{ color: theme.colors.primary }} /> Fitness Goals & Health
+            </h2>
+            <div className="grid grid-cols-1 gap-4">
+              {/* Health Goals */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.colors.textSecondary }}>Health Goals</label>
+                {isEditing ? (
+                  <textarea name="healthGoals" value={formData.healthGoals} onChange={handleInputChange} rows="2"
+                    className="w-full p-3 rounded-xl border outline-none resize-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.profileDetails?.healthGoals} />}
+              </div>
+
+              {/* Health Conditions */}
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaNotesMedical /> Health Conditions / Notes
+                </label>
+                {isEditing ? (
+                  <textarea name="healthConditions" value={formData.healthConditions} onChange={handleInputChange} rows="2"
+                    className="w-full p-3 rounded-xl border outline-none resize-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.profileDetails?.healthConditions} />}
+              </div>
+
+              {/* Preferred Workout Time */}
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaClock /> Preferred Workout Time
+                </label>
+                {isEditing ? (
+                  <select name="preferredWorkoutTime" value={formData.preferredWorkoutTime} onChange={handleInputChange}
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle}>
+                    <option value="">Select Time</option>
+                    <option value="Morning">Morning</option>
+                    <option value="Afternoon">Afternoon</option>
+                    <option value="Evening">Evening</option>
+                    <option value="Flexible">Flexible</option>
+                  </select>
+                ) : <FieldDisplay value={userData?.profileDetails?.preferredWorkoutTime} />}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Emergency Contact Card (Customer only) */}
+        {userData?.role === 'customer' && (
+          <div className="rounded-2xl p-6 border" style={{ backgroundColor: theme.colors.surface, borderColor: theme.colors.border }}>
+            <h2 className="text-lg font-bold mb-5 flex items-center gap-2" style={{ color: theme.colors.text }}>
+              <FaUserFriends style={{ color: theme.colors.primary }} /> Emergency Contact
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.colors.textSecondary }}>Name</label>
+                {isEditing ? (
+                  <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleInputChange}
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.emergencyContact?.name} />}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.colors.textSecondary }}>Phone</label>
+                {isEditing ? (
+                  <input type="tel" name="emergencyContactPhone" value={formData.emergencyContactPhone} onChange={handleInputChange}
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.emergencyContact?.phone} />}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.colors.textSecondary }}>Relationship</label>
+                {isEditing ? (
+                  <input type="text" name="emergencyContactRelationship" value={formData.emergencyContactRelationship} onChange={handleInputChange}
+                    placeholder="e.g., Spouse, Parent"
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.emergencyContact?.relationship} />}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Professional Details Card (Trainer only) */}
+        {userData?.role === 'trainer' && (
+          <div className="rounded-2xl p-6 border" style={{ backgroundColor: theme.colors.surface, borderColor: theme.colors.border }}>
+            <h2 className="text-lg font-bold mb-5 flex items-center gap-2" style={{ color: theme.colors.text }}>
+              <FaBriefcase style={{ color: theme.colors.primary }} /> Professional Details
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Bio */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.colors.textSecondary }}>Bio</label>
+                {isEditing ? (
+                  <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows="3"
+                    className="w-full p-3 rounded-xl border outline-none resize-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.bio} />}
+              </div>
+
+              {/* Years Experience */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.colors.textSecondary }}>Years of Experience</label>
+                {isEditing ? (
+                  <input type="number" name="yearsExperience" value={formData.yearsExperience} onChange={handleInputChange}
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.yearsExperience ? `${userData.yearsExperience} years` : null} />}
+              </div>
+
+              {/* Hourly Rate */}
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaDollarSign /> Hourly Rate (PKR)
+                </label>
+                {isEditing ? (
+                  <input type="number" name="hourlyRate" value={formData.hourlyRate} onChange={handleInputChange}
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.hourlyRate ? `PKR ${userData.hourlyRate}` : null} />}
+              </div>
+
+              {/* Specializations */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaDumbbell /> Specializations (comma-separated)
+                </label>
+                {isEditing ? (
+                  <input type="text" name="specializations" value={formData.specializations} onChange={handleInputChange}
+                    placeholder="e.g., HIIT, Weight Training, Yoga"
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.profileDetails?.specializations?.join(", ")} />}
+              </div>
+
+              {/* Certifications */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaCertificate /> Certifications (comma-separated)
+                </label>
+                {isEditing ? (
+                  <input type="text" name="certifications" value={formData.certifications} onChange={handleInputChange}
+                    placeholder="e.g., ACE, NASM, CrossFit Level 1"
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.profileDetails?.certifications?.join(", ")} />}
+              </div>
+
+              {/* Languages */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaGlobe /> Languages (comma-separated)
+                </label>
+                {isEditing ? (
+                  <input type="text" name="languages" value={formData.languages} onChange={handleInputChange}
+                    placeholder="e.g., English, Urdu, Punjabi"
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.languages?.join(", ")} />}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Social Links Card (Trainer only) */}
+        {userData?.role === 'trainer' && (
+          <div className="rounded-2xl p-6 border" style={{ backgroundColor: theme.colors.surface, borderColor: theme.colors.border }}>
+            <h2 className="text-lg font-bold mb-5 flex items-center gap-2" style={{ color: theme.colors.text }}>
+              <FaGlobe style={{ color: theme.colors.primary }} /> Social Links
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaInstagram /> Instagram
+                </label>
+                {isEditing ? (
+                  <input type="url" name="instagram" value={formData.instagram} onChange={handleInputChange}
+                    placeholder="https://instagram.com/..."
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.socialLinks?.instagram} />}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaLinkedin /> LinkedIn
+                </label>
+                {isEditing ? (
+                  <input type="url" name="linkedin" value={formData.linkedin} onChange={handleInputChange}
+                    placeholder="https://linkedin.com/in/..."
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.socialLinks?.linkedin} />}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaYoutube /> YouTube
+                </label>
+                {isEditing ? (
+                  <input type="url" name="youtube" value={formData.youtube} onChange={handleInputChange}
+                    placeholder="https://youtube.com/..."
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.socialLinks?.youtube} />}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2" style={{ color: theme.colors.textSecondary }}>
+                  <FaGlobe /> Website
+                </label>
+                {isEditing ? (
+                  <input type="url" name="website" value={formData.website} onChange={handleInputChange}
+                    placeholder="https://..."
+                    className="w-full p-3 rounded-xl border outline-none" style={inputStyle} />
+                ) : <FieldDisplay value={userData?.socialLinks?.website} />}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Account Actions Card */}
-        <div 
-          className="rounded-2xl p-6 border"
-          style={{ 
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border
-          }}
-        >
-          <h2 
-            className="text-lg font-bold mb-4"
-            style={{ color: theme.colors.text }}
-          >
-            Account
-          </h2>
+        <div className="rounded-2xl p-6 border" style={{ backgroundColor: theme.colors.surface, borderColor: theme.colors.border }}>
+          <h2 className="text-lg font-bold mb-4" style={{ color: theme.colors.text }}>Account</h2>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:scale-105"
-            style={{ 
-              backgroundColor: '#ef444420',
-              color: '#ef4444'
-            }}
+            style={{ backgroundColor: '#ef444420', color: '#ef4444' }}
           >
-          <FaSignOutAlt />
-            Logout
+            <FaSignOutAlt /> Logout
           </button>
         </div>
       </div>

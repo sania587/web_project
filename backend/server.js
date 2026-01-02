@@ -1,8 +1,10 @@
 // server.js
 
+const dotenv = require('dotenv');
+dotenv.config(); // MUST be before any imports that use process.env
+
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
@@ -18,8 +20,6 @@ const feedbackRoutes = require('./routes/feedbackRoutes');
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes'); // New import for dashboard routes
 const app = express();
-
-dotenv.config();
 
 // Middleware
 app.use(cors());
