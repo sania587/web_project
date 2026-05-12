@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const SubscriptionController = require('../controllers/SubscriptionController');
+const SubscriptionController = require('../controllers/subscriptionController');
+
 const { protect, protectRole } = require('../middleware/authMiddleware');
 
 // Get all subscriptions (public)
