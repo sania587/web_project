@@ -185,9 +185,6 @@ FitHum supports 6 beautiful themes:
 
 This project is for educational purposes.
 
-## 👨‍💻 Author
-
-**Taimoor Raza Asif** - [GitHub](https://github.com/Taimoor-Raza-Asif)
 
 ---
 
